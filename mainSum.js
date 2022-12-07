@@ -19,8 +19,8 @@ const formatNumber = d3.utcFormat("%H:%M:%S");
 class Diagramm {
   constructor() {
     this.d3data = null,
-    this.duration = 150,
-    this.n = 20,
+    this.duration = 100,
+    this.n = 15,
     this.k = 10,
     this.barsize = 12,
     this.margin = {top: 0, right: 6, bottom: 6, left: 0},
