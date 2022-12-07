@@ -1,0 +1,8 @@
+tailwindcss.exe
+brilliant.PNG
+startdev.bat
+assets/Gotham-Spotify-Font.zip
+data/*
+!data/example/
+assets
+dev
