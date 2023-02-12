@@ -36,12 +36,14 @@ function externalDate(date) {
 const mobile = ref(false);
 onMounted(() => {
   window.addEventListener("resize", () => {
-    mobile.value = window.innerWidth / window.innerHeight < 1.5;
+    mobile.value =
+      window.innerWidth / window.innerHeight < 1.5 ||
+      2.4 < window.innerWidth / window.innerHeight;
   });
 });
 onUnmounted(() => {
   window.removeEventListener("resize", () => {
-    mobile.value = window.innerWidth / window.innerHeight < 1.5;
+    mobile.value = 4 < window.innerWidth / window.innerHeight < 1.5;
   });
 });
 </script>
@@ -66,7 +68,7 @@ onUnmounted(() => {
           class="flex px-6 py-5 space-x-4 font-bold text-white transition-all duration-200 ease-in-out bg-opacity-40 w-fit text-ellipsis rounded-xl gap-y-2 backdrop-blur-xl"
           :class="[
             visibleElement == 'upload'
-              ? 'bg-gray-600 text-9xl'
+              ? 'bg-gray-600 text-9xl xl:text-7xl md:text-5xl'
               : 'bg-gray-600 text-5xl',
           ]"
         >
@@ -93,7 +95,7 @@ onUnmounted(() => {
         <div class="flex-grow" />
         <div
           class="flex px-4 py-3 m-4 ml-auto text-white border-2 border-transparent cursor-pointer w-fit text-ellipsis rounded-xl backdrop-blur-xl bg-opacity-40 hover:outline-2 hover:shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 hover:bg-slate-600 hover:bg-opacity-30"
-          :class="[upload ? 'bg-gray-300 text-2xl' : 'hidden']"
+          :class="[visibleElement == 'chart' ? 'bg-gray-300 text-2xl' : 'hidden']"
           @click="background = !background"
         >
           <EyeIcon class="mr-2 w-7 h-7" v-if="!background" />
@@ -101,7 +103,7 @@ onUnmounted(() => {
           Background
         </div>
       </div>
-      <div v-if="visibleElement == 'upload'" class="h-2/5"></div>
+      <div v-if="visibleElement == 'upload'" class="lg:h-2/5 md:h-1/5 h-1/5"></div>
       <UploadWindow
         v-if="visibleElement == 'upload'"
         @uploadedData="uploadedData"
@@ -111,14 +113,22 @@ onUnmounted(() => {
         :data="chartData"
         @externalDate="externalDate"
       />
-      <SingleSong v-if="visibleElement == 'singleSong'"
-        :class="[visibleElement == 'singleSong' ? 'transition-all duration-500 left-0' : '']"
+      <SingleSong
+        v-if="visibleElement == 'singleSong'"
+        :class="[
+          visibleElement == 'singleSong'
+            ? 'transition-all duration-500 left-0'
+            : '',
+        ]"
       />
       <div
         v-if="visibleElement == 'upload'"
         class="flex justify-end h-full pr-5"
       >
-        <h2 class="self-center w-1/5 text-5xl font-bold text-white">
+      <div class="flex justify-end w-full">
+        <h2
+          class="flex flex-col self-center text-5xl font-bold text-white lg:w-3/5 xl:w-1/5"
+        >
           Check out your Spotify data!
           <span class="font-medium"
             >Download from
@@ -129,6 +139,7 @@ onUnmounted(() => {
             >
           </span>
         </h2>
+      </div>
       </div>
     </div>
   </div>

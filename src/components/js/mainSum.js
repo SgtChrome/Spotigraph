@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 
-const formatDate = d3.utcFormat("%d. %B %Y");
-// format ms to minutes d3
+// format the date time to a readable format in
+const formatDate = d3.timeFormat("%d. %B %Y");
 const formatNumber = d3.utcFormat("%H:%M:%S");
 
 class Diagramm {
@@ -9,22 +9,24 @@ class Diagramm {
     data,
     charti,
     frame,
-    stop,
+    running,
     onlyLastFrame,
     stoppedFrameIndex,
     singleSongFunction,
-    externalDate
+    externalDate,
+    useListenedTime
   ) {
     this.data = data;
     this.charti = charti;
     this.frame = frame;
-    this.stop = stop;
+    this.running = running;
     this.onlyLastFrame = onlyLastFrame;
     this.stoppedFrameIndex = stoppedFrameIndex;
     this.singleSongFunction = singleSongFunction;
     this.externalDate = externalDate;
 
     this.useListenedTime = true;
+    this.useListenedTimeReactive = useListenedTime;
     this.duration = 100;
     this.n = 15;
     this.period = "all";
@@ -51,15 +53,6 @@ class Diagramm {
     this.colorMap = new Map();
     this.consideredEvents = [];
     this.initChart();
-  }
-  rank(value) {
-    const data = Array.from(this.names, (name) => ({
-      name,
-      value: value(name),
-    }));
-    data.sort((a, b) => d3.descending(a.value, b.value));
-    for (let i = 0; i < data.length; ++i) data[i].rank = Math.min(this.n, i);
-    return data;
   }
   updateVisibleData(idx, previousRank) {
     this.lastVisibleData = this.visibleData;
@@ -303,20 +296,22 @@ class Diagramm {
               "transform",
               (d) => `translate(${this.x(d[1])},${this.y(d[2])})`
             )
-            .tween("text", (d) => this.textTween(d[3], d[1]))
+            .tween("text", (d) => {
+              if (this.useListenedTime) {
+                return this.textTween(d[3], d[1]);
+              } else {
+                return function () {
+                  return (this.textContent = d[1]);
+                };
+              }
+            })
         ));
   }
   textTween(a, b) {
     const i = d3.interpolateNumber(a, b);
-    if (this.useListenedTime) {
-      return function (t) {
-        this.textContent = formatNumber(i(t));
-      };
-    } else {
-      return function (t) {
-        this.textContent = Math.floor(i(t));
-      };
-    }
+    return function (t) {
+      this.textContent = formatNumber(i(t));
+    };
   }
   axis(svg) {
     const g = svg
@@ -350,15 +345,13 @@ class Diagramm {
       .text(formatDate(this.data[0].endTime));
 
     return (idx, transition) => {
-      transition.end().then(() =>
-        now.text(
-          /* formatDate(
-              d3.timeParse("%Y-%m-%d")(this.data[0].endTime.split(" ")[0])
-            ) +
-              " - \n" + */
-          formatDate(
-            d3.timeParse("%Y-%m-%d")(this.data[idx].endTime.split(" ")[0])
-          )
+      now.text(
+        /* formatDate(
+            d3.timeParse("%Y-%m-%d")(this.data[0].endTime.split(" ")[0])
+          ) +
+            " - \n" + */
+        formatDate(
+          d3.timeParse("%Y-%m-%d")(this.data[idx].endTime.split(" ")[0])
         )
       );
     };
@@ -446,31 +439,40 @@ class Diagramm {
     this.visibleData = [];
     this.lastVisibleData = [];
     this.currentData = [];
+    this.consideredEvents = [];
+    this.currentMinimum = 0;
+    this.useListenedTime = this.useListenedTimeReactive.value;
   }
-  async replay(i) {
-    if (!i) i = 0;
-    while (i < this.data.length) {
-      if (this.stop.value) {
-        this.stoppedFrameIndex.value = i;
-        return;
-      }
-      this.frame.value = i;
-
-      //this.data.length
-
-      if (this.calcNewPositions(i)) {
-        if (!this.onlyLastFrame.value) await this.render(i);
-
-        // set previous value
-        for (let i = 0; i < this.visibleData.length; ++i) {
-          this.visibleData[i][3] = this.lastVisibleData[i][1];
+  replay(i) {
+    return new Promise(async (resolve) => {
+      if (!i) i = 0;
+      while (i < this.data.length) {
+        if (!this.running.value) {
+          this.svg.transition();
+          this.stoppedFrameIndex.value = i;
+          resolve();
+          return;
         }
+        this.frame.value = i;
+
+        //this.data.length
+
+        if (this.calcNewPositions(i)) {
+          if (!this.onlyLastFrame.value) await this.render(i);
+          // set previous value
+          for (let i = 0; i < this.visibleData.length; ++i) {
+            this.visibleData[i][3] = this.lastVisibleData[i][1];
+          }
+        }
+        i++;
       }
-      i++;
-    }
-    if (this.onlyLastFrame.value) {
-      await this.render(this.data.length - 1);
-    }
+      if (this.onlyLastFrame.value) {
+        await this.render(this.data.length - 1);
+        resolve();
+      } else {
+        resolve();
+      }
+    });
   }
   updateExternalDate(idx) {
     this.externalDate.value =
@@ -487,15 +489,15 @@ class Diagramm {
       .ease(d3.easeLinear);
 
     // scale the graph
-
     this.x.domain([0, this.visibleData[0][1]]);
+
     this.updateAxis(transition);
     this.updateBars(transition);
-    //this.updateImages(transition);
     this.updateLabels(transition);
     this.updateNumbers(transition);
     this.updateTicker(i, transition);
-    this.updateExternalDate(i);
+    //this.updateImages(transition);
+    //this.updateExternalDate(i);
     await transition.end();
   }
 }
