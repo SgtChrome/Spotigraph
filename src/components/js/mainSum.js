@@ -12,7 +12,8 @@ class Diagramm {
     stop,
     onlyLastFrame,
     stoppedFrameIndex,
-    singleSongFunction
+    singleSongFunction,
+    externalDate
   ) {
     this.data = data;
     this.charti = charti;
@@ -21,6 +22,7 @@ class Diagramm {
     this.onlyLastFrame = onlyLastFrame;
     this.stoppedFrameIndex = stoppedFrameIndex;
     this.singleSongFunction = singleSongFunction;
+    this.externalDate = externalDate;
 
     this.useListenedTime = true;
     this.duration = 100;
@@ -337,25 +339,28 @@ class Diagramm {
   ticker(svg) {
     const now = svg
       .append("text")
+      .style("font-size", "1px")
       .style("font", `bold ${this.barsize}px var(--sans-serif)`)
       .style("font-variant-numeric", "tabular-nums")
       .style("fill", "white")
       .attr("text-anchor", "end")
-      .attr("x", this.width() - 6)
-      .attr("y", this.margin.top + this.barsize * (this.n - 0.45) - 5)
+      .attr("x", this.width() - 3)
+      .attr("y", this.margin.top + this.barsize * (this.n - 0.45))
       .attr("dy", "0.32em")
       .text(formatDate(this.data[0].endTime));
 
     return (idx, transition) => {
-      transition
-        .end()
-        .then(() =>
-          now.text(
-            formatDate(
-              d3.timeParse("%Y-%m-%d")(this.data[idx].endTime.split(" ")[0])
-            )
+      transition.end().then(() =>
+        now.text(
+          /* formatDate(
+              d3.timeParse("%Y-%m-%d")(this.data[0].endTime.split(" ")[0])
+            ) +
+              " - \n" + */
+          formatDate(
+            d3.timeParse("%Y-%m-%d")(this.data[idx].endTime.split(" ")[0])
           )
-        );
+        )
+      );
     };
   }
   color(artist) {
@@ -374,7 +379,7 @@ class Diagramm {
       //const color = d3.color(d3.interpolateBlues(Math.random()));
 
       // Add the new category and color to the map
-      this.colorMap.set(artist, color) //.darker());
+      this.colorMap.set(artist, color); //.darker());
       // Return the newly generated color
       return color;
     }
@@ -467,6 +472,14 @@ class Diagramm {
       await this.render(this.data.length - 1);
     }
   }
+  updateExternalDate(idx) {
+    this.externalDate.value =
+      formatDate(d3.timeParse("%Y-%m-%d")(this.data[0].endTime.split(" ")[0])) +
+      " - " +
+      formatDate(
+        d3.timeParse("%Y-%m-%d")(this.data[idx].endTime.split(" ")[0])
+      );
+  }
   async render(i) {
     const transition = this.svg
       .transition()
@@ -482,6 +495,7 @@ class Diagramm {
     this.updateLabels(transition);
     this.updateNumbers(transition);
     this.updateTicker(i, transition);
+    this.updateExternalDate(i);
     await transition.end();
   }
 }

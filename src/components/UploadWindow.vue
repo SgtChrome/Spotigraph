@@ -106,7 +106,7 @@ function processJSON(data) {
 async function readZipFile(url) {
   const { entries } = await unzip(url);
 
-  let data = {};
+  let data = [];
   // print all entries and their sizes
   for (const [pathName, entry] of Object.entries(entries)) {
     console.log(pathName, entry.size);
@@ -118,8 +118,8 @@ async function readZipFile(url) {
       const json = await entry.json();
       console.log(json);
       // append the data to the data object
-      //data = { ...data, ...json };
-      data = json;
+      data = data.concat(json);
+      //data = json;
     }
   }
   if (data) {

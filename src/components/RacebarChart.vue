@@ -10,6 +10,7 @@ import {
 } from "@heroicons/vue/24/solid";
 
 const props = defineProps(["data"]);
+const emit = defineEmits(["externalDate"]);
 
 const charti = ref(null);
 let chart = null;
@@ -20,6 +21,8 @@ const stop = ref(false);
 const frame = ref(0);
 const onlyLastFrame = ref(false);
 const stoppedFrameIndex = ref(0);
+const singleSong = ref(false);
+const externalDate = ref(null);
 
 /*
 let startTime = new Date().getSeconds();
@@ -58,12 +61,9 @@ function prepareData(json) {
 function filterData(json, year, month) {
   let filteredData = [];
   for (let i = 0; i < json.length; i++) {
-    if (
-      json[i].endTime.split("-")[1] === month &&
-      json[i].endTime.split("-")[0] === year
-    ) {
-      filteredData.push(json[i]);
-    }
+    if (json[i].endTime.split("-")[0] !== year) continue;
+    if (month) if (json[i].endTime.split("-")[1] !== month) continue;
+    filteredData.push(json[i]);
   }
   return filteredData;
 }
@@ -111,12 +111,22 @@ function getMonth(month) {
       return "Dezember";
   }
 }
-watch(pickedMonth, () => {
+function clickedYear() {
+  pickedMonth.value = false;
   replay();
-});
+}
+function clickedMonth() {
+  replay();
+}
 watch(onlyLastFrame, () => {
   if (!onlyLastFrame.value) {
     replay();
+  }
+});
+watch(externalDate, () => {
+  console.log("externalDate changed");
+  if (externalDate.value) {
+    emit("externalDate", externalDate.value);
   }
 });
 const playPause = computed(() => {
@@ -139,7 +149,9 @@ onMounted(() => {
     frame,
     stop,
     onlyLastFrame,
-    stoppedFrameIndex
+    stoppedFrameIndex,
+    singleSong,
+    externalDate
   );
   chart.replay();
 });
@@ -152,7 +164,7 @@ onMounted(() => {
   >
     <!-- <span class="text-lg"> Frame: {{ frame }} FPS: {{ fps }}</span> -->
     <div
-      class="relative justify-center inline-block w-full overflow-hidden text-sm align-top rounded-md pb-[37%] h-min"
+      class="relative justify-center pb-[calc(100vh-292px)] inline-block w-full overflow-hidden text-sm align-top rounded-md h-min"
       ref="charti"
     />
   </div>
@@ -203,6 +215,7 @@ onMounted(() => {
             id="alle"
             value="alle"
             v-model="pickedYear"
+            @click="clickedYear"
           />
           <label class="defaultButton" for="alle">Alle</label>
         </li>
@@ -214,6 +227,7 @@ onMounted(() => {
             :id="year"
             :value="year"
             v-model="pickedYear"
+            @click="clickedYear"
           />
           <label class="defaultButton" :for="year">{{ year }}</label>
         </li>
@@ -227,8 +241,9 @@ onMounted(() => {
             :id="month"
             :value="month"
             v-model="pickedMonth"
+            @click="clickedMonth"
           />
-          <label class="defaultButton" :for="month">{{ getMonth(month) }}</label>
+          <label class="defaultButton" :for="month"> {{ getMonth(month) }}</label>
         </li>
       </ul>
     </div>
