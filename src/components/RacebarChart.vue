@@ -200,6 +200,7 @@ onMounted(() => {
     useListenedTime
   );
   replay();
+
 });
 onUnmounted(() => {
   window.removeEventListener("resize", resize);
@@ -212,23 +213,23 @@ watch(useListenedTime, () => {
 
 <template>
   <div class="flex flex-row">
-    <div id="leftpadding"></div>
+    <div class="hidden lg:block" id="leftpadding"></div>
 
     <div
-      class="flex w-full px-5 py-2 mt-5 bg-gray-500 flex-grow-1 backdrop-blur-xl rounded-xl bg-opacity-30"
+      class="flex w-full px-3 pb-2 mt-2 bg-gray-500 lg:px-5 lg:mt-5 flex-grow-1 backdrop-blur-xl rounded-xl bg-opacity-30"
       id="racebarChart"
     >
       <!-- <span class="text-lg"> Frame: {{ frame }} FPS: {{ fps }}</span> pb-[calc(100vh-292px)]-->
       <div
-        class="relative w-full inline-block justify-center overflow-hidden text-sm align-top rounded-md pb-[37%]"
+        class="relative w-full inline-block justify-center overflow-hidden text-sm align-top rounded-md pb-[38%] lg:pb-[37%]"
         ref="charti"
       />
     </div>
-    <div id="rightpadding"></div>
+    <div class="hidden lg:block" id="rightpadding"></div>
   </div>
 
-  <div class="flex flex-row pt-6">
-    <div class="flex flex-col space-y-2">
+  <div class="flex flex-col pt-3 lg:pl-1 lg:space-y-0 lg:pt-6 lg:flex-row">
+    <div class="flex flex-row space-x-1 lg:space-x-0 lg:space-y-2 lg:flex-col">
       <div class="flex space-x-2">
         <button
           class="flex"
@@ -297,9 +298,9 @@ watch(useListenedTime, () => {
         </label>
       </div>
     </div>
-    <div class="flex flex-col w-full h-full pl-16">
-      <ul class="flex pt-1 space-x-2 h-fit">
-        <li>
+    <div class="flex flex-col w-full h-full mt-2 lg:pl-16">
+      <ul class="flex flex-wrap pt-1 gap-x-2 gap-y-4 h-fit">
+        <li class="">
           <input
             class="hidden peer"
             type="radio"
@@ -324,7 +325,7 @@ watch(useListenedTime, () => {
           <label class="defaultDatetimeButton" :for="year">{{ year }}</label>
         </li>
       </ul>
-      <ul class="flex mt-5 space-x-2">
+      <ul class="flex flex-wrap mt-4 mb-3 gap-x-2 gap-y-4 lg:mt-5">
         <li v-for="month in months" :key="month">
           <input
             class="hidden peer"

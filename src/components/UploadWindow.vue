@@ -1,28 +1,28 @@
 <template>
   <div
-    class="flex flex-row items-center justify-center w-full space-x-10 text-lg text-gray-50"
+    class="flex flex-col items-center justify-center w-full text-lg space-y-7 sm:space-x-10 sm:space-y-0 sm:flex-row text-gray-50"
   >
     <label
       for="dropzone-file"
-      class="flex flex-col items-center justify-center w-2/5 h-64 border-8 border-dashed rounded-lg cursor-pointer bg-opacity-40 bg-gray-50 hover:bg-gray-100 hover:bg-opacity-70"
+      class="flex flex-col items-center justify-center w-3/5 border-8 border-dashed rounded-lg cursor-pointer h-58 md:h-40 sm:h-64 sm:w-2/5 bg-opacity-40 bg-gray-50 hover:bg-gray-100 hover:bg-opacity-70"
       @drop.prevent="onDrop"
       :class="{
         'border-red-500': error,
         'border-grey-500': !error,
       }"
     >
-      <div class="flex flex-col items-center justify-center pt-5 pb-6">
+      <div class="flex flex-col items-center justify-center pt-5 pb-6 ">
         <ArrowUpTrayIcon class="mb-2 w-14 h-14" />
-        <p class="mb-2 font-semibold">Click to upload or drag and drop</p>
+        <p class="font-semibold text-center lg:p-2 lg:mb-2">Click to upload or drag and drop</p>
         <p class="text-base">Spotify Data Export .zip</p>
       </div>
       <input id="dropzone-file" type="file" class="hidden" @change="onChange" />
     </label>
     <div
-      class="flex flex-col items-center justify-center w-48 pt-5 pb-6 align-middle border-8 border-dashed rounded-lg cursor-pointer h-52 bg-opacity-40 bg-gray-50 hover:bg-gray-100 hover:bg-opacity-70"
+      class="flex flex-col items-center justify-center w-48 h-40 pt-5 pb-6 align-middle border-8 border-dashed rounded-lg cursor-pointer md:h-32 sm:h-52 bg-opacity-40 bg-gray-50 hover:bg-gray-100 hover:bg-opacity-70"
       @click="emit('uploadedData', 'sample')"
     >
-      <CircleStackIcon class="mb-2 w-14 h-14" />
+      <CircleStackIcon class="sm:mb-2 md:mb-1 lg:mb-2 w-14 h-14" />
       <span class="font-semibold">Try sample data</span>
     </div>
   </div>

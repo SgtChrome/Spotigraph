@@ -8,6 +8,7 @@ import {
   ArrowDownOnSquareStackIcon,
   EyeIcon,
   EyeSlashIcon,
+  ArrowUturnLeftIcon,
 } from "@heroicons/vue/24/solid";
 
 const chartData = ref(null);
@@ -33,56 +34,55 @@ function externalDate(date) {
   externalDateDisplay.value = date;
 }
 const mobile = ref(false);
+function setMobile() {
+  mobile.value = window.innerWidth / window.innerHeight < 1.5;
+}
 onMounted(() => {
-  window.addEventListener("resize", () => {
-    mobile.value =
-      window.innerWidth / window.innerHeight < 1.5 ||
-      2.4 < window.innerWidth / window.innerHeight;
-  });
+  setMobile();
+  window.addEventListener("resize", setMobile);
 });
 onUnmounted(() => {
-  window.removeEventListener("resize", () => {
-    mobile.value = 4 < window.innerWidth / window.innerHeight < 1.5;
-  });
+  window.removeEventListener("resize", setMobile);
 });
 </script>
 
 <template>
   <div
-    class="absolute z-50 flex flex-col items-center justify-center w-screen h-screen text-4xl text-center text-white bg-black"
-    v-if="mobile"
+    class="absolute z-50 flex flex-col items-center justify-center w-full h-full text-4xl text-center text-white bg-black"
+    v-if="mobile && visibleElement == 'chart'"
   >
     <span class="font-bold"
       ><span class="pr-2 text-green-400">Spotify</span>Data Visualizer</span
     >
-    <span class="text-1xl">Use of this website requires a computer</span>
+    <ArrowUturnLeftIcon class="mr-2 w-7 h-7" />
+    <span class="text-1xl">Flip your screen over</span>
   </div>
   <Background :background="background" />
   <div class="w-full h-screen">
     <div
-      class="flex flex-col h-full px-10 pt-8 transition-all duration-500 ease-in-out"
+      class="flex flex-col h-full transition-all duration-500 ease-in-out sm:px-10 md:px-6 lg:px-10"
+      :class="[
+        visibleElement == 'upload' ? 'px-2 pt-8' : 'lg:px-2 lg:pt-8 pt-2 px-1',
+      ]"
     >
-      <div class="flex flex-row space-x-10 select-none">
+      <div class="flex justify-center select-none">
         <h1
-          class="flex px-6 py-5 space-x-4 font-bold text-white transition-all duration-200 ease-in-out bg-opacity-40 w-fit text-ellipsis rounded-xl gap-y-2 backdrop-blur-xl"
+          class="flex font-bold text-white transition-all duration-200 ease-in-out w-fit h-fit bg-opacity-40 text-ellipsis rounded-xl backdrop-blur-xl"
           :class="[
             visibleElement == 'upload'
-              ? 'bg-gray-600 text-9xl xl:text-7xl md:text-5xl'
-              : 'bg-gray-600 text-5xl',
+              ? 'bg-gray-600 2xl:text-9xl lg:text-3xl text-3xl px-3 md:space-x-4 space-x-2 sm:px-5 py-2 ml-4 md:py-2'
+              : 'bg-gray-600 2xl:text-5xl lg:text-5xl text-md px-3 space-x-2 lg:space-x-4 lg:px-6 py-1 lg:py-5',
           ]"
         >
           <span class="text-green-400">Spotify</span>
           <span>Data Visualizer</span>
         </h1>
-        <!-- <p class="text-xl text-black">Visualize your Spotify data</p> -->
         <div
-          class="flex px-4 py-3 m-4 text-white transition-all duration-500 ease-in-out border-2 border-transparent cursor-pointer w-fit text-ellipsis rounded-xl backdrop-blur-xl bg-opacity-40 hover:outline-2 hover:shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 hover:bg-slate-600 hover:bg-opacity-30"
-          :class="[
-            visibleElement == 'upload' ? 'hidden' : 'bg-gray-300 text-2xl',
-          ]"
+          class="topbarButton"
+          :class="[visibleElement == 'upload' ? 'hidden' : 'flex']"
           @click="visibleElement = 'upload'"
         >
-          <ArrowDownOnSquareStackIcon class="mr-2 w-7 h-7" />
+          <ArrowDownOnSquareStackIcon class="iconTopBarButton" />
           New Data
         </div>
         <div
@@ -93,14 +93,12 @@ onUnmounted(() => {
         </div>
         <div class="flex-grow" />
         <div
-          class="flex px-4 py-3 m-4 ml-auto text-white border-2 border-transparent cursor-pointer w-fit text-ellipsis rounded-xl backdrop-blur-xl bg-opacity-40 hover:outline-2 hover:shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 hover:bg-slate-600 hover:bg-opacity-30"
-          :class="[
-            visibleElement == 'chart' ? 'bg-gray-300 text-2xl' : 'hidden',
-          ]"
+          class="topbarButton"
+          :class="[visibleElement == 'chart' ? 'flex' : 'hidden']"
           @click="background = !background"
         >
-          <EyeIcon class="mr-2 w-7 h-7" v-if="!background" />
-          <EyeSlashIcon class="mr-2 w-7 h-7" v-if="background" />
+          <EyeIcon class="iconTopBarButton" v-if="!background" />
+          <EyeSlashIcon class="iconTopBarButton" v-if="background" />
           Background
         </div>
       </div>
@@ -113,7 +111,7 @@ onUnmounted(() => {
         @uploadedData="uploadedData"
       />
       <RacebarChart
-        v-if="visibleElement == 'chart'"
+        v-if="visibleElement == 'chart' && !mobile"
         :data="chartData"
         @externalDate="externalDate"
       />
@@ -129,9 +127,9 @@ onUnmounted(() => {
         v-if="visibleElement == 'upload'"
         class="flex justify-end h-full pr-5"
       >
-        <div class="flex justify-end w-full">
+        <div class="flex justify-end w-full p-4">
           <h2
-            class="flex flex-col self-center text-5xl font-bold text-white lg:w-3/5 xl:w-1/5"
+            class="flex flex-col self-center text-4xl font-bold text-white md:text-4xl lg:text-5xl lg:w-3/5 xl:w-1/5"
           >
             Check out your Spotify data!
             <span class="font-medium"
@@ -150,6 +148,12 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.topbarButton {
+  @apply px-2 py-px mx-2 my-1 text-white transition-all duration-500 ease-in-out border-2 border-transparent cursor-pointer lg:py-3 lg:m-4 lg:px-4 w-fit text-ellipsis rounded-xl backdrop-blur-xl bg-opacity-40 hover:outline-2 hover:shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 hover:bg-slate-600 hover:bg-opacity-30 bg-gray-300 text-sm lg:text-2xl;
+}
+.iconTopBarButton {
+  @apply w-4 h-4 pt-[3px] mr-1 lg:mr-2 lg:w-7 lg:h-7;
+}
 * {
   font-family: "Open Sans", Roboto, Helvetica, Arial, Sans-Serif, sans-serif;
 }

@@ -29,8 +29,8 @@ onMounted(() => {
 .background--custom {
   background-color: #060606;
   width: 100vw;
-  height: 100vh;
-  position: absolute;
+  height: 100%; /* 100vh; */
+  position: fixed;
   overflow: hidden;
   z-index: -2;
   top: 0;
