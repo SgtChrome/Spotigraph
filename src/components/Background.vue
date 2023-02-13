@@ -28,7 +28,7 @@ onMounted(() => {
 <style scoped>
 .background--custom {
   background-color:#060606;
-  width: 100vw;
+  width: 100%;
   height: 100%; /* 100vh; */
   position: fixed;
   overflow: hidden;
