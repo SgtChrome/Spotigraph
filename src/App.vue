@@ -57,12 +57,15 @@ onUnmounted(() => {
     <ArrowUturnLeftIcon class="mr-2 w-7 h-7" />
     <span class="text-1xl">Flip your screen over</span>
   </div>
-  <Background v-if="!(mobile && visibleElement == 'chart')" :background="background" />
+  <Background
+    v-if="!(mobile && visibleElement == 'chart')"
+    :background="background"
+  />
   <div class="w-full h-screen">
     <div
       class="flex flex-col h-full transition-all duration-500 ease-in-out sm:px-10 md:px-6 lg:px-10"
       :class="[
-        visibleElement == 'upload' ? 'px-2 pt-8' : 'lg:px-2 lg:pt-8 pt-2 px-1',
+        visibleElement == 'upload' ? 'px-2 pt-8' : 'lg:px-10 lg:pt-8 pt-2 px-1',
       ]"
     >
       <div class="flex justify-center select-none">
