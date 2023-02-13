@@ -4,7 +4,7 @@
   >
     <label
       for="dropzone-file"
-      class="flex flex-col items-center justify-center w-3/5 border-8 border-dashed rounded-lg cursor-pointer h-58 md:h-40 sm:h-64 sm:w-2/5 bg-opacity-40 bg-gray-50 hover:bg-gray-100 hover:bg-opacity-70"
+      class="flex flex-col items-center justify-center w-3/5 border-8 border-dashed rounded-lg cursor-pointer h-58 md:h-40 sm:h-64 lg:h-64 sm:w-2/5 bg-opacity-40 bg-gray-50 hover:bg-gray-100 hover:bg-opacity-70"
       @drop.prevent="onDrop"
       :class="{
         'border-red-500': error,
@@ -19,7 +19,7 @@
       <input id="dropzone-file" type="file" class="hidden" @change="onChange" />
     </label>
     <div
-      class="flex flex-col items-center justify-center w-48 h-40 pt-5 pb-6 align-middle border-8 border-dashed rounded-lg cursor-pointer md:h-32 sm:h-52 bg-opacity-40 bg-gray-50 hover:bg-gray-100 hover:bg-opacity-70"
+      class="flex flex-col items-center justify-center w-48 h-40 pt-5 pb-6 align-middle border-8 border-dashed rounded-lg cursor-pointer md:h-32 sm:h-52 lg:h-52 bg-opacity-40 bg-gray-50 hover:bg-gray-100 hover:bg-opacity-70"
       @click="emit('uploadedData', 'sample')"
     >
       <CircleStackIcon class="sm:mb-2 md:mb-1 lg:mb-2 w-14 h-14" />
