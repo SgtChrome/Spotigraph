@@ -10,7 +10,6 @@ import {
   EyeSlashIcon,
 } from "@heroicons/vue/24/solid";
 
-const upload = ref(false);
 const chartData = ref(null);
 const background = ref(true);
 
@@ -95,7 +94,9 @@ onUnmounted(() => {
         <div class="flex-grow" />
         <div
           class="flex px-4 py-3 m-4 ml-auto text-white border-2 border-transparent cursor-pointer w-fit text-ellipsis rounded-xl backdrop-blur-xl bg-opacity-40 hover:outline-2 hover:shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 hover:bg-slate-600 hover:bg-opacity-30"
-          :class="[visibleElement == 'chart' ? 'bg-gray-300 text-2xl' : 'hidden']"
+          :class="[
+            visibleElement == 'chart' ? 'bg-gray-300 text-2xl' : 'hidden',
+          ]"
           @click="background = !background"
         >
           <EyeIcon class="mr-2 w-7 h-7" v-if="!background" />
@@ -103,7 +104,10 @@ onUnmounted(() => {
           Background
         </div>
       </div>
-      <div v-if="visibleElement == 'upload'" class="lg:h-2/5 md:h-1/5 h-1/5"></div>
+      <div
+        v-if="visibleElement == 'upload'"
+        class="lg:h-2/5 md:h-1/5 h-1/5"
+      ></div>
       <UploadWindow
         v-if="visibleElement == 'upload'"
         @uploadedData="uploadedData"
@@ -125,21 +129,21 @@ onUnmounted(() => {
         v-if="visibleElement == 'upload'"
         class="flex justify-end h-full pr-5"
       >
-      <div class="flex justify-end w-full">
-        <h2
-          class="flex flex-col self-center text-5xl font-bold text-white lg:w-3/5 xl:w-1/5"
-        >
-          Check out your Spotify data!
-          <span class="font-medium"
-            >Download from
-            <a
-              class="text-green-500"
-              href="https://www.spotify.com/de/account/privacy/"
-              >Spotify.com</a
-            >
-          </span>
-        </h2>
-      </div>
+        <div class="flex justify-end w-full">
+          <h2
+            class="flex flex-col self-center text-5xl font-bold text-white lg:w-3/5 xl:w-1/5"
+          >
+            Check out your Spotify data!
+            <span class="font-medium"
+              >Download from
+              <a
+                class="text-green-500"
+                href="https://www.spotify.com/de/account/privacy/"
+                >Spotify.com</a
+              >
+            </span>
+          </h2>
+        </div>
       </div>
     </div>
   </div>
