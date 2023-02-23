@@ -114,29 +114,29 @@ function playPause() {
 function getMonth(month) {
   switch (month) {
     case "01":
-      return "Januar";
+      return "January";
     case "02":
-      return "Februar";
+      return "February";
     case "03":
-      return "März";
+      return "March";
     case "04":
       return "April";
     case "05":
-      return "Mai";
+      return "May";
     case "06":
-      return "Juni";
+      return "June";
     case "07":
-      return "Juli";
+      return "July";
     case "08":
       return "August";
     case "09":
       return "September";
     case "10":
-      return "Oktober";
+      return "October";
     case "11":
       return "November";
     case "12":
-      return "Dezember";
+      return "December";
   }
 }
 /* watch(running, () => {
@@ -242,7 +242,7 @@ watch(useListenedTime, () => {
           Replay
         </button>
         <button
-          class="flex"
+          class="flex w-[123px]"
           @click="playPauseClicked"
           :class="[
             onlyLastFrame ? 'defaultButtonDeactivated' : 'defaultButton',
@@ -250,7 +250,7 @@ watch(useListenedTime, () => {
         >
           <PlayPauseIcon
             v-if="running && !onlyLastFrame"
-            class="mr-1 w-7 h-7"
+            class="mr-2 w-7 h-7"
           />
           <PlayIcon v-if="!running || onlyLastFrame" class="mr-2 w-7 h-7" />
           {{ playPauseText }}
@@ -269,11 +269,11 @@ watch(useListenedTime, () => {
           />
           <ChartBarSquareIcon class="mr-2 w-7" />
           <span class="flex content-end self-end align-text-bottom"
-            >Endergebnis</span
+            >Result</span
           >
         </label>
       </div>
-      <div class="w-fit">
+      <div class="pb-2 w-fit">
         <input
           type="checkbox"
           name="useListenedTimeCheckBox"
@@ -293,7 +293,7 @@ watch(useListenedTime, () => {
           />
           <PlayCircleIcon v-if="!useListenedTime" class="mr-2 w-7" />
           <span class="flex content-end self-end align-text-bottom">{{
-            useListenedTime ? "Zeitdauer" : "Anzahl Hits"
+            useListenedTime ? "Time" : "Hits"
           }}</span>
         </label>
       </div>
@@ -310,7 +310,7 @@ watch(useListenedTime, () => {
             v-model="pickedYear"
             @change="clickedYear"
           />
-          <label class="defaultDatetimeButton" for="alle">Alle</label>
+          <label class="defaultDatetimeButton" for="alle">All</label>
         </li>
         <li v-for="year in yearsArray" :key="year">
           <input

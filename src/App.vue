@@ -73,8 +73,8 @@ onUnmounted(() => {
           class="flex font-bold text-white transition-all duration-200 ease-in-out w-fit h-fit bg-opacity-40 text-ellipsis rounded-xl backdrop-blur-xl"
           :class="[
             visibleElement == 'upload'
-              ? 'bg-gray-600 2xl:text-9xl lg:text-3xl text-3xl px-3 md:space-x-4 space-x-2 sm:px-5 py-2 ml-4 md:py-2'
-              : 'bg-gray-600 2xl:text-5xl lg:text-5xl text-md px-3 space-x-2 lg:space-x-4 lg:px-6 py-1 lg:py-5',
+              ? 'bg-gray-600 2xl:text-9xl lg:text-7xl md:text-5xl text-3xl px-3 md:space-x-4 space-x-2 sm:px-5 py-2 ml-4 md:py-2'
+              : 'bg-gray-600 2xl:text-5xl lg:text-5xl md:text-xl text-md px-3 space-x-2 lg:space-x-4 lg:px-6 py-1 lg:py-5',
           ]"
         >
           <span class="text-green-400">Spotify</span>
@@ -105,14 +105,16 @@ onUnmounted(() => {
           Background
         </div>
       </div>
+      <!-- <div
+        v-if="visibleElement == 'upload'"
+        class="flex min-h-[20px] lg:h-2/5 h-1/5 md:pt-5 lg:pt-0 sm:pt-0"
+      ></div> -->
       <div
         v-if="visibleElement == 'upload'"
-        class="lg:h-2/5 h-1/5 md:pt-5 lg:pt-0 sm:pt-0"
-      ></div>
-      <UploadWindow
-        v-if="visibleElement == 'upload'"
-        @uploadedData="uploadedData"
-      />
+        class="flex items-center flex-grow m-5"
+      >
+        <UploadWindow class="flex" @uploadedData="uploadedData" />
+      </div>
       <RacebarChart
         v-if="visibleElement == 'chart' && !mobile"
         :data="chartData"
@@ -126,13 +128,10 @@ onUnmounted(() => {
             : '',
         ]"
       />
-      <div
-        v-if="visibleElement == 'upload'"
-        class="flex justify-end h-full pr-5"
-      >
-        <div class="flex justify-end w-full p-4">
+      <div v-if="visibleElement == 'upload'" class="flex justify-end pr-5">
+        <div class="flex justify-end w-full p-4 mb-10">
           <h2
-            class="flex flex-col self-center text-4xl font-bold text-white md:text-4xl lg:text-5xl lg:w-3/5 xl:w-1/5"
+            class="flex flex-col self-center text-4xl font-bold text-white lg:text-end md:text-4xl lg:text-5xl lg:w-3/5 xl:w-[50%]"
           >
             Check out your Spotify data!
             <span class="font-medium"
