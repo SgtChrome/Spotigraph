@@ -11,8 +11,7 @@ import {
 } from "@heroicons/vue/24/solid";
 
 const props = defineProps(["data"]);
-const emit = defineEmits(["externalDate"]);
-const singleSong = ref(false);
+const emit = defineEmits(["externalDate", "spotifyUri"]);
 const externalDate = ref(null);
 const frame = ref(0);
 
@@ -33,6 +32,10 @@ let startTime = new Date().getSeconds();
  let fps = computed(() => {
   return frame.value / (new Date().getSeconds() - startTime);
 }); */
+const singleSong = function (song) {
+  console.log("Testt", song)
+  emit("spotifyUri", song);
+};
 
 let [years, yearsArray] = prepareData(props.data);
 const months = computed(() => {
