@@ -63,13 +63,14 @@ class Diagramm {
       0,
       null,
       this.data[idx].artistName,
+      this.data[idx].spotifyUri ? [this.data[idx].spotifyUri] : [this.data[idx].trackName, this.data[idx].artistName],
     ]);
     this.calculateRanks();
     this.currentMinimum = this.visibleData[this.visibleData.length - 1][1];
   }
 
   calcNewPositions(idx) {
-    // visible data is [0 name, 1 value, 2 rank, 3 previous value, 4 previous rank, 5 artist]
+    // visible data is [0 name, 1 value, 2 rank, 3 previous value, 4 previous rank, 5 artist, 6 spotifyUri]
     // exclude tracks that are played for less than 5 seconds
     let triggerUpdate = false;
     if (this.data[idx].msPlayed < 1000 * 5) return false;
@@ -177,7 +178,7 @@ class Diagramm {
       .attr("text-anchor", "start")
       .selectAll("text");
 
-    return ([date, data], transition) =>
+    return (idx, transition) =>
       (label = label
         .data(this.visibleData, (d) => d)
         .join(
@@ -189,7 +190,8 @@ class Diagramm {
               .attr("x", 1.2)
               .attr("dy", "0.4em")
               .text((d) => this.doLabels(d))
-              .on("click", () => this.singleSongFunction(this)),
+              // send the spotify uri or the track name and artist to the singleSongFunction
+              .on("click", (_, d) => this.singleSongFunction(d[6])),
           //.attr("dy", "-1.15em")),
           (update) => update,
           (exit) =>
@@ -493,7 +495,7 @@ class Diagramm {
 
     this.updateAxis(transition);
     this.updateBars(transition);
-    this.updateLabels(transition);
+    this.updateLabels(i, i, transition);
     this.updateNumbers(transition);
     this.updateTicker(i, transition);
     //this.updateImages(transition);

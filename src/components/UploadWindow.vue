@@ -140,6 +140,7 @@ function normalizeExtendedData(data) {
       artistName: data[i].master_metadata_album_artist_name,
       msPlayed: data[i].ms_played,
       endTime: format(new Date(data[i].ts), "yyyy-MM-dd HH:mm"),
+      spotifyUri: data[i].spotify_track_uri,
     };
     // discard songs with no track name
     if (normalizedSong.trackName) normalizedData.push(normalizedSong);

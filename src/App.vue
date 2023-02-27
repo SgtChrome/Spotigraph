@@ -10,6 +10,7 @@ import {
   EyeSlashIcon,
   ArrowUturnLeftIcon,
 } from "@heroicons/vue/24/solid";
+import SpotifyPreview from "@/components/SpotifyPreview.vue";
 
 const chartData = ref(null);
 const background = ref(true);
@@ -17,6 +18,10 @@ const background = ref(true);
 const visibleElement = ref("upload");
 const externalDateDisplay = ref(null);
 const externalDateBool = ref(false);
+const spotifyUri = ref(null);
+
+//check if browser is mobile by checking browser identity
+const isMobileUserAgent = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 async function uploadedData(data) {
   console.log("uploadedData");
@@ -24,10 +29,12 @@ async function uploadedData(data) {
     import("@/assets/testdata/StreamingHistory0.json").then((data) => {
       chartData.value = data.default;
       visibleElement.value = "chart";
+      spotifyUri.value = null;
     });
   } else {
     chartData.value = data;
     visibleElement.value = "chart";
+    spotifyUri.value = null;
   }
 }
 function externalDate(date) {
@@ -72,7 +79,7 @@ onUnmounted(() => {
         <h1
           class="flex font-bold text-white transition-all duration-200 ease-in-out w-fit h-fit bg-opacity-40 text-ellipsis rounded-xl backdrop-blur-xl"
           :class="[
-            visibleElement == 'upload'
+            visibleElement === 'upload'
               ? 'bg-gray-600 2xl:text-9xl lg:text-7xl md:text-5xl text-3xl px-3 md:space-x-4 space-x-2 sm:px-5 py-2 ml-4 md:py-2'
               : 'bg-gray-600 2xl:text-5xl lg:text-5xl md:text-xl text-md px-3 space-x-2 lg:space-x-4 lg:px-6 py-1 lg:py-5',
           ]"
@@ -88,6 +95,10 @@ onUnmounted(() => {
           <ArrowDownOnSquareStackIcon class="iconTopBarButton" />
           New Data
         </div>
+        <SpotifyPreview
+          v-if="visibleElement !== 'upload' && !isMobileUserAgent"
+          :spotifyUri="spotifyUri"
+        />
         <div
           v-if="externalDateBool"
           class="flex px-4 py-3 m-4 text-white border-2 border-transparent cursor-pointer w-fit text-ellipsis rounded-xl backdrop-blur-xl bg-opacity-40"
@@ -119,6 +130,7 @@ onUnmounted(() => {
         v-if="visibleElement == 'chart' && !mobile"
         :data="chartData"
         @externalDate="externalDate"
+        @spotifyUri="(value) => spotifyUri = value"
       />
       <SingleSong
         v-if="visibleElement == 'singleSong'"
