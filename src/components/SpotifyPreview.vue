@@ -26,7 +26,7 @@ const props = defineProps({
 function fetchSpotifyUri(newVal) {
   const devurl = "http://127.0.0.1:8000"
   const produrl = "https://spotigraph-backend.ey.r.appspot.com"
-  fetch(devurl + "/searchSpotify?track=" + newVal[0].replace(' ', '%20') + "&artist=" + newVal[1].replace(' ', '%20'),
+  fetch(produrl + "/searchSpotify?track=" + newVal[0].replace(' ', '%20') + "&artist=" + newVal[1].replace(' ', '%20'),
       {
     "method": "GET",
     "mode": "cors",
