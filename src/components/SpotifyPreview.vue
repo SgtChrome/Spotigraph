@@ -38,6 +38,7 @@ function fetchSpotifyUri(newVal) {
     {
       method: "GET",
       mode: "cors",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
