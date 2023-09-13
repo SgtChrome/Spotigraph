@@ -133,17 +133,21 @@ function normalizeExtendedData(data) {
   // normalizes the extended data to the format of the short streaming history
   const normalizedData = [];
   for (let i = 0; i < data.length; i++) {
+    // discard podcast episodes
+    if (data[i].episode_name) continue;
+    // discard songs with no track name
+    if (!data[i].master_metadata_track_name) continue;
+
     const normalizedSong = {
       trackName: data[i].master_metadata_track_name
-      ? data[i].master_metadata_track_name
-      : data[i].episode_name,
+        ? data[i].master_metadata_track_name
+        : data[i].episode_name,
       artistName: data[i].master_metadata_album_artist_name,
       msPlayed: data[i].ms_played,
       endTime: format(new Date(data[i].ts), "yyyy-MM-dd HH:mm"),
       spotifyUri: data[i].spotify_track_uri,
     };
-    // discard songs with no track name
-    if (normalizedSong.trackName) normalizedData.push(normalizedSong);
+    normalizedData.push(normalizedSong);
   }
   normalizedData.sort((a, b) => {
     return new Date(a.endTime) - new Date(b.endTime);
