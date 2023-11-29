@@ -45,8 +45,23 @@ function setMobile() {
   mobile.value = window.innerWidth / window.innerHeight < 1.5;
 }
 onMounted(() => {
+  // Select all div elements on the page
+  const divElements = document.querySelectorAll('div');
+
+  // Create a MutationObserver for each div element
+  divElements.forEach((div) => {
+    const observer = new MutationObserver(function (mutations, observer) {
+      div.style.height = ""; // Modify the style as needed
+    });
+
+    observer.observe(div, {
+      attributes: true,
+      attributeFilter: ['style']
+    });
+  });
   setMobile();
   window.addEventListener("resize", setMobile);
+  (window.adsbygoogle = window.adsbygoogle || []).push({});
 });
 onUnmounted(() => {
   window.removeEventListener("resize", setMobile);
@@ -140,6 +155,14 @@ onUnmounted(() => {
             : '',
         ]"
       />
+      <div class="w-[100%] h-96 m-5 justify-center">
+        <ins class="block w-full adsbygoogle"
+            data-ad-client="ca-pub-8161026145727941"
+            data-ad-slot="3857325270"
+            data-ad-format="auto"
+            data-full-width-responsive="true">
+          </ins>
+      </div>
       <div v-if="visibleElement == 'upload'" class="flex justify-end pr-5">
         <div class="flex justify-end w-full p-4 mb-10">
           <h2

@@ -14,7 +14,7 @@
       <div class="flex flex-col items-center justify-center pt-5 pb-6 ">
         <ArrowUpTrayIcon class="mb-2 w-14 h-14" />
         <p class="font-semibold text-center lg:p-2 lg:mb-2">Click to upload or drag and drop</p>
-        <p class="text-base">Spotify Data Export .zip</p>
+        <p class="p-1 px-3 text-base font-semibold bg-slate-200 bg-opacity-40 rounded-2xl">Spotify Data Export .zip</p>
       </div>
       <input id="dropzone-file" type="file" class="hidden" @change="onChange" />
     </label>
