@@ -28,3 +28,6 @@ package-lock.json
 *.sw?
 art
 
+/docs
+/dist
+.firebase/

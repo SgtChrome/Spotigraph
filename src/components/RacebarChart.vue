@@ -9,8 +9,9 @@ import {
   ClockIcon,
   PlayCircleIcon,
 } from "@heroicons/vue/24/solid";
+import { fi } from "date-fns/locale";
 
-const props = defineProps(["data"]);
+const props = defineProps(["data", "filtering"]);
 const emit = defineEmits(["externalDate", "spotifyUri"]);
 const externalDate = ref(null);
 const frame = ref(0);
@@ -33,7 +34,7 @@ let startTime = new Date().getSeconds();
   return frame.value / (new Date().getSeconds() - startTime);
 }); */
 const singleSong = function (song) {
-  console.log("Testt", song)
+  console.log("Testt", song);
   emit("spotifyUri", song);
 };
 
@@ -107,6 +108,14 @@ watch(ready, () => {
     }
   }
 });
+watch(
+  () => props.filtering,
+  (filtering) => {
+    console.log("filtering: " + filtering);
+    chart.filtering = filtering;
+    replay();
+  }
+);
 
 function playPause() {
   running.value = !running.value;
@@ -193,6 +202,7 @@ onMounted(() => {
 
   chart = new Diagramm(
     props.data,
+    props.filtering,
     charti.value,
     frame,
     running,
@@ -203,7 +213,7 @@ onMounted(() => {
     useListenedTime
   );
   replay();
-
+  //chart.resize();
 });
 onUnmounted(() => {
   window.removeEventListener("resize", resize);
@@ -215,23 +225,25 @@ watch(useListenedTime, () => {
 </script>
 
 <template>
-  <div class="flex flex-row">
+  <div class="flex flex-row w-full h-full">
     <div class="hidden lg:block" id="leftpadding"></div>
 
     <div
-      class="flex w-full px-3 pb-2 mt-2 bg-gray-500 lg:px-5 lg:mt-5 flex-grow-1 backdrop-blur-xl rounded-xl bg-opacity-30"
-      id="racebarChart"
+      class="flex w-full px-2 pb-2 mt-2 bg-gray-500 lg:px-5 lg:mt-5 backdrop-blur-xl rounded-xl bg-opacity-30"
     >
       <!-- <span class="text-lg"> Frame: {{ frame }} FPS: {{ fps }}</span> pb-[calc(100vh-292px)]-->
       <div
         class="relative w-full inline-block justify-center overflow-hidden text-sm align-top rounded-md pb-[38%] lg:pb-[37%]"
         ref="charti"
+        id="chartiDiv"
       />
     </div>
     <div class="hidden lg:block" id="rightpadding"></div>
   </div>
 
-  <div class="flex flex-col pt-3 lg:pl-1 lg:space-y-0 lg:pt-6 lg:flex-row">
+  <div
+    class="flex flex-col pt-3 pl-px lg:pl-1 lg:space-y-0 lg:pt-6 lg:flex-row"
+  >
     <div class="flex flex-row space-x-1 lg:space-x-0 lg:space-y-2 lg:flex-col">
       <div class="flex space-x-2">
         <button
@@ -241,11 +253,11 @@ watch(useListenedTime, () => {
           ]"
           @click="replayClicked"
         >
-          <ArrowPathIcon class="mr-2 w-7 h-7" />
-          Replay
+          <ArrowPathIcon class="lg:mr-2 w-7 h-7" />
+          <span class="hidden lg:block">Replay</span>
         </button>
         <button
-          class="flex w-[123px]"
+          class="flex w-fit lg:w-[123px]"
           @click="playPauseClicked"
           :class="[
             onlyLastFrame ? 'defaultButtonDeactivated' : 'defaultButton',
@@ -253,10 +265,10 @@ watch(useListenedTime, () => {
         >
           <PlayPauseIcon
             v-if="running && !onlyLastFrame"
-            class="mr-2 w-7 h-7"
+            class="lg:mr-2 w-7 h-7"
           />
-          <PlayIcon v-if="!running || onlyLastFrame" class="mr-2 w-7 h-7" />
-          {{ playPauseText }}
+          <PlayIcon v-if="!running || onlyLastFrame" class="lg:mr-2 w-7 h-7" />
+          <span class="hidden lg:block">{{ playPauseText }}</span>
         </button>
         <input
           type="checkbox"
@@ -267,7 +279,7 @@ watch(useListenedTime, () => {
         />
         <label class="flex defaultButton" for="onlyLastFrameValue">
           <ChartBarSquareIcon
-            class="absolute mr-2 w-7"
+            class="absolute lg:mr-2 w-7"
             :class="[onlyLastFrame ? 'animate-ping' : '']"
           />
           <ChartBarSquareIcon class="mr-2 w-7" />

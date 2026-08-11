@@ -56,6 +56,8 @@ function fetchSpotifyUri(newVal) {
 watch(
   () => props.spotifyUri,
   (newVal) => {
+    // return if the window size is too small
+    if (window.innerWidth < 1536) return
     loading.value = true;
     if (!EmbedController) {
       let element = document.getElementById("embed-iframe");

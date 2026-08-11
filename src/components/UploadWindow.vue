@@ -11,15 +11,15 @@
         'border-grey-500': !error,
       }"
     >
-      <div class="flex flex-col items-center justify-center pt-5 pb-6 ">
+      <div class="flex flex-col items-center justify-center pt-5 pb-6">
         <ArrowUpTrayIcon class="mb-2 w-14 h-14" />
         <p class="font-semibold text-center lg:p-2 lg:mb-2">Click to upload or drag and drop</p>
-        <p class="p-1 px-3 text-base font-semibold bg-slate-200 bg-opacity-40 rounded-2xl">Spotify Data Export .zip</p>
+        <p class="p-1 px-3 m-1 text-sm text-center sm:text-base sm:font-semibold bg-slate-200 bg-opacity-40 rounded-2xl">Spotify Data Export .zip</p>
       </div>
       <input id="dropzone-file" type="file" class="hidden" @change="onChange" />
     </label>
     <div
-      class="flex flex-col items-center justify-center w-48 h-40 pt-5 pb-6 align-middle border-8 border-dashed rounded-lg cursor-pointer md:h-32 sm:h-52 lg:h-52 bg-opacity-40 bg-gray-50 hover:bg-gray-100 hover:bg-opacity-70"
+      class="flex flex-col items-center justify-center w-48 h-40 pt-5 pb-6 align-middle border-8 border-dashed rounded-lg cursor-pointer md:h-32 sm:h-52 lg:h-52 bg-opacity-40 bg-gray-50 hover:bg-gray-100 hover:bg-opacity-70 animate-bounce-me"
       @click="emit('uploadedData', 'sample')"
     >
       <CircleStackIcon class="sm:mb-2 md:mb-1 lg:mb-2 w-14 h-14" />
@@ -111,15 +111,14 @@ async function readZipFile(url) {
   for (const [pathName, entry] of Object.entries(entries)) {
     console.log(pathName, entry.size);
     const name = pathName.split("/").pop(-1);
-    if (
-      (name.startsWith("StreamingHistory") || name.startsWith("endsong")) &&
-      name.endsWith(".json")
-    ) {
+    if (name.endsWith(".json")) {
       const json = await entry.json();
-      console.log(json);
-      // append the data to the data object
-      data = data.concat(json);
-      //data = json;
+      // append the data to the data object if it contains streaming history
+      // check if json is array
+      if (Array.isArray(json)) {
+        if (json[0].trackName || json[0].master_metadata_track_name) data = data.concat(json);
+        //data = json;
+      }
     }
   }
   if (data) {
@@ -146,6 +145,7 @@ function normalizeExtendedData(data) {
       msPlayed: data[i].ms_played,
       endTime: format(new Date(data[i].ts), "yyyy-MM-dd HH:mm"),
       spotifyUri: data[i].spotify_track_uri,
+      albumName: data[i].master_metadata_album_album_name,
     };
     normalizedData.push(normalizedSong);
   }
@@ -156,4 +156,18 @@ function normalizeExtendedData(data) {
 }
 </script>
 
-<style lang="scss" scoped></style>
+<style scoped>
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(-3%);
+        animation-timing-function: cubic-bezier(0.8,0,1,1);
+    }
+    50% {
+        transform: none;
+        animation-timing-function: cubic-bezier(0,0,0.2,1);
+    }
+}
+.animate-bounce-me {
+    animation: bounce 1s infinite;
+}
+</style>

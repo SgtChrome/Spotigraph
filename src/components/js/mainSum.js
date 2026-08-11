@@ -1,12 +1,32 @@
 import * as d3 from "d3";
+import { tr } from "date-fns/locale";
 
 // format the date time to a readable format in
 const formatDate = d3.timeFormat("%d. %B %Y");
 const formatNumber = d3.utcFormat("%H:%M:%S");
+const formatDuration = (durationInMilliseconds) => {
+  const totalSeconds = Math.floor(durationInMilliseconds / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${hours}:${String(minutes).padStart(2, "0")}:${String(
+    seconds
+  ).padStart(2, "0")}`;
+};
+
+class Tracki {
+  constructor(trackName, artistName, msPlayed) {
+    this.trackName = trackName;
+    this.artistName = artistName;
+    this.msPlayed = msPlayed;
+  }
+}
 
 class Diagramm {
   constructor(
     data,
+    filtering,
     charti,
     frame,
     running,
@@ -17,6 +37,7 @@ class Diagramm {
     useListenedTime
   ) {
     this.data = data;
+    this.filtering = filtering;
     this.charti = charti;
     this.frame = frame;
     this.running = running;
@@ -47,6 +68,7 @@ class Diagramm {
       ])
       .padding(0.1);
 
+    // in currentData we will put a tuple of
     this.currentData = {};
     this.visibleData = [];
     this.currentMinimum = 10000000;
@@ -54,26 +76,55 @@ class Diagramm {
     this.consideredEvents = [];
     this.initChart();
   }
-  updateVisibleData(idx, previousRank) {
+  // TODO filtering by artist and album
+  updateVisibleData(idx, previousRank, trackNameAndArtist) {
     this.lastVisibleData = this.visibleData;
     this.visibleData.push([
       this.data[idx].trackName,
-      this.currentData[this.data[idx].trackName],
+      this.currentData[trackNameAndArtist],
       previousRank,
       0,
       null,
       this.data[idx].artistName,
-      this.data[idx].spotifyUri ? [this.data[idx].spotifyUri] : [this.data[idx].trackName, this.data[idx].artistName],
+      this.data[idx].spotifyUri
+        ? [this.data[idx].spotifyUri]
+        : [this.data[idx].trackName, this.data[idx].artistName],
+      this.filtering == "Albums" ? this.data[idx].albumName : "",
     ]);
     this.calculateRanks();
     this.currentMinimum = this.visibleData[this.visibleData.length - 1][1];
   }
 
+  getTrackNameAndArtist(artistName, trackName, albumName) {
+    let trackNameAndArtist = "";
+    switch (this.filtering) {
+      case "Songs":
+        trackNameAndArtist = trackName + artistName;
+        break;
+      case "Artists":
+        trackNameAndArtist = artistName;
+        break;
+      case "Albums":
+        trackNameAndArtist = albumName + artistName;
+        break;
+      default:
+        trackNameAndArtist = trackName + artistName;
+        break;
+    }
+    return trackNameAndArtist;
+  }
+
   calcNewPositions(idx) {
-    // visible data is [0 name, 1 value, 2 rank, 3 previous value, 4 previous rank, 5 artist, 6 spotifyUri]
+    // visible data is [0 name, 1 value, 2 rank, 3 previous value, 4 previous rank, 5 artist, 6 spotifyUri, 7 albumName]
     // exclude tracks that are played for less than 5 seconds
     let triggerUpdate = false;
     if (this.data[idx].msPlayed < 1000 * 5) return false;
+
+    let trackNameAndArtist = this.getTrackNameAndArtist(
+      this.data[idx].artistName,
+      this.data[idx].trackName,
+      this.data[idx].albumName
+    );
 
     if (this.period === "month") {
       // check if event occured in the last 30 days
@@ -84,10 +135,10 @@ class Diagramm {
         this.consideredEvents[0].endTime < date.setDate(date.getDate() - 30)
       ) {
         if (this.useListenedTime) {
-          this.currentData[this.consideredEvents[0].trackName] -=
+          this.currentData[trackNameAndArtist] -=
             this.consideredEvents.shift().msPlayed;
         } else {
-          this.currentData[this.consideredEvents[0].trackName] -= 1;
+          this.currentData[trackNameAndArtist] -= 1;
         }
         if (!triggerUpdate) {
           for (let i = 0; i < this.visibleData.length; ++i) {
@@ -103,24 +154,30 @@ class Diagramm {
 
     if (this.useListenedTime) {
       // check if track is in current data
-      if (this.currentData.hasOwnProperty(this.data[idx].trackName)) {
-        this.currentData[this.data[idx].trackName] += this.data[idx].msPlayed;
+      if (this.currentData.hasOwnProperty(trackNameAndArtist)) {
+        this.currentData[trackNameAndArtist] += this.data[idx].msPlayed;
       } else {
-        this.currentData[this.data[idx].trackName] = this.data[idx].msPlayed;
+        this.currentData[trackNameAndArtist] = this.data[idx].msPlayed;
       }
     } else {
-      if (this.currentData.hasOwnProperty(this.data[idx].trackName)) {
-        this.currentData[this.data[idx].trackName] += 1;
+      if (this.currentData.hasOwnProperty(trackNameAndArtist)) {
+        this.currentData[trackNameAndArtist] += 1;
       } else {
-        this.currentData[this.data[idx].trackName] = 1;
+        this.currentData[trackNameAndArtist] = 1;
       }
     }
 
     // check if track is in visible data
     for (let i = 0; i < this.visibleData.length; ++i) {
-      if (this.visibleData[i][0] === this.data[idx].trackName) {
+      if (
+        this.getTrackNameAndArtist(
+          this.visibleData[i][5],
+          this.visibleData[i][0],
+          this.visibleData[i][7]
+        ) === trackNameAndArtist
+      ) {
         // set new value
-        this.visibleData[i][1] = this.currentData[this.data[idx].trackName];
+        this.visibleData[i][1] = this.currentData[trackNameAndArtist];
         this.calculateRanks();
         this.currentMinimum = this.visibleData[this.visibleData.length - 1][1];
         return true;
@@ -128,14 +185,12 @@ class Diagramm {
     }
 
     if (this.visibleData.length < this.n) {
-      this.updateVisibleData(idx, this.visibleData.length);
+      this.updateVisibleData(idx, this.visibleData.length, trackNameAndArtist);
       return true;
-    } else if (
-      this.currentData[this.data[idx].trackName] > this.currentMinimum
-    ) {
+    } else if (this.currentData[trackNameAndArtist] > this.currentMinimum) {
       this.visibleData.splice(this.visibleData.length - 1, 1);
       // add the new entry to visibleData
-      this.updateVisibleData(idx, this.n);
+      this.updateVisibleData(idx, this.n, trackNameAndArtist);
       return true;
     }
     return triggerUpdate;
@@ -154,19 +209,25 @@ class Diagramm {
     }
   }
   doLabels(d) {
-    if (this.x(d[1]) - this.x(0) - 45 < d[0].length * 3) {
+    let label =
+      this.filtering == "Songs"
+        ? d[0]
+        : this.filtering == "Albums"
+        ? d[7]
+        : d[5];
+    /* if (this.x(d[1]) - this.x(0) - 45 < label.length * 3) {
       return (
-        d[0].substring(0, Math.floor((this.x(d[1]) - this.x(0) - 45) / 3)) +
+        label.substring(0, Math.floor((this.x(d[1]) - this.x(0) - 45) / 3)) +
         "..."
       );
-    } else {
-      return d[0];
-    }
+    } else { */
+      return label;
+    /* } */
   }
   labels(svg) {
     let label = svg
       .append("g")
-      .style("font-size", "8px")
+      .style("font-size", `${10 * (this.barsize * 0.04)}px`)
       .style("font-weight", "500")
       .style(
         "font-family",
@@ -187,7 +248,8 @@ class Diagramm {
               .append("text")
               .attr("transform", (d) => `translate(0,${this.y(d[4])})`)
               .attr("y", this.y.bandwidth() / 2)
-              .attr("x", 1.2)
+              //.attr("x", 1.2)
+              .attr("x", 1 + this.barsize / 18)
               .attr("dy", "0.4em")
               .text((d) => this.doLabels(d))
               // send the spotify uri or the track name and artist to the singleSongFunction
@@ -251,7 +313,7 @@ class Diagramm {
   numbers(svg) {
     let label = svg
       .append("g")
-      .style("font-size", "8px")
+      .style("font-size", `${(7) + (this.barsize / 5.7) }px`)
       .style(
         "font-family",
         "Inter,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif"
@@ -275,7 +337,9 @@ class Diagramm {
               .attr("fill-opacity", 0.9)
               .attr("font-weight", "normal")
               .attr("dy", "1.05em")
+              //.attr("dy", "0.4em")
               .attr("dx", "-0.2em"),
+          //.attr("dx", "-0.2em"),
           (update) => update,
           (exit) =>
             exit
@@ -312,7 +376,7 @@ class Diagramm {
   textTween(a, b) {
     const i = d3.interpolateNumber(a, b);
     return function (t) {
-      this.textContent = formatNumber(i(t));
+      this.textContent = formatDuration(i(t));
     };
   }
   axis(svg) {
@@ -336,17 +400,18 @@ class Diagramm {
   ticker(svg) {
     const now = svg
       .append("text")
-      .style("font-size", "1px")
+
       .style("font", `bold ${this.barsize}px var(--sans-serif)`)
       .style("font-variant-numeric", "tabular-nums")
       .style("fill", "white")
       .attr("text-anchor", "end")
       .attr("x", this.width() - 3)
-      .attr("y", this.margin.top + this.barsize * (this.n - 0.45))
-      .attr("dy", "0.32em")
+      .attr("y", this.margin.top - 3 + this.barsize * (this.n + 1))
+      //.attr("dy", "0.32em")
       .text(formatDate(this.data[0].endTime));
 
     return (idx, transition) => {
+      now.style("font-size", `${12 + this.barsize * 0.2}px`);
       now.text(
         /* formatDate(
             d3.timeParse("%Y-%m-%d")(this.data[0].endTime.split(" ")[0])
@@ -392,9 +457,10 @@ class Diagramm {
           (enter) =>
             enter
               .append("rect")
-              .attr("rx", 2)
+              .attr("rx", 1 + this.barsize / 12)
               .attr("fill", (d) => this.color(d[5]))
-              .attr("height", this.y.bandwidth())
+              //.attr("height", this.y.bandwidth())
+              .attr("height", this.barsize)
               .attr("x", this.x(0) + 0.1)
               .attr("y", (d) => this.y(d[4]))
               .attr("width", (d) => this.x(d[3]) - this.x(0)),
@@ -414,7 +480,7 @@ class Diagramm {
         ));
   }
   height() {
-    return this.margin.top + this.barsize * this.n + this.margin.bottom;
+    return this.margin.top + this.barsize * (this.n + 1.1) + this.margin.bottom;
   }
   width() {
     return 500;
@@ -426,6 +492,30 @@ class Diagramm {
       .attr("viewBox", [0, 0, this.width(), this.height()])
       .attr("preserveAspectRatio", "xMinYMin meet")
       .classed("svg-content-responsive", true);
+
+    /* const sizes = document.getElementById("chartiDiv").getBoundingClientRect();
+    const ratio = sizes.height / sizes.width;
+
+    // Adjust scaling factor depending on typical ratio range
+    const scaleFactor = Math.min(sizes.width, sizes.height) / 790; // Base reference width
+
+    this.barsize = ratio * 25 * scaleFactor; */
+
+    // set barsize according to the ratio of div width and height
+    const sizes = document.getElementById("chartiDiv").getBoundingClientRect();
+    this.barsize = (sizes.height / sizes.width) * 30.8; //31.3;
+    console.log(this.barsize);
+
+    this.y = d3
+      .scaleBand()
+      .domain(d3.range(this.n + 1))
+      .rangeRound([
+        this.margin.top,
+        this.margin.top + this.barsize * (this.n + 1 + 0.1 + 1.2),
+      ])
+      .padding(0.1);
+    //this.svg.attr("height", this.height());
+    this.svg.attr("viewBox", [0, 0, this.width(), this.height()]);
 
     this.updateBars = this.bars(this.svg);
     this.updateAxis = this.axis(this.svg);
@@ -470,6 +560,7 @@ class Diagramm {
       }
       if (this.onlyLastFrame.value) {
         await this.render(this.data.length - 1);
+        console.log(this.visibleData);
         resolve();
       } else {
         resolve();
