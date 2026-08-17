@@ -1,6 +1,10 @@
 # Spotigraph
 
-## To push a new version
+See the newest version live at [spotigraph.net](https://spotigraph.net)!
 
-Run npm build
-Run git subtree push --prefix dist origin gh-pages
+## Development & Deployment
+
+```bash
+npm run dev
+npm run build
+```
