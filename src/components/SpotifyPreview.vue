@@ -29,7 +29,8 @@ const props = defineProps({
 function fetchSpotifyUri(newVal) {
   const devurl = "http://localhost:3000";
   //const devurl = "http://127.0.0.1:8000";
-  const produrl = "https://spotigraph-backend.ey.r.appspot.com";
+  //const produrl = "https://spotigraph-backend.ey.r.appspot.com";
+  const produrl = "https://spotigraph-backend-288873394410.europe-west1.run.app";
   fetch(
     produrl +
       "/searchSpotify?track=" +
