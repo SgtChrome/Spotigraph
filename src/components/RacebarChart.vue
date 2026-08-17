@@ -189,6 +189,8 @@ function replayClicked() {
   }
 }
 
+let resizeObserver = null;
+
 onMounted(() => {
   chart = new Diagramm(
     props.data,
@@ -203,6 +205,21 @@ onMounted(() => {
     useListenedTime
   );
   replay();
+
+  if (typeof ResizeObserver !== "undefined" && charti.value) {
+    resizeObserver = new ResizeObserver(() => {
+      if (chart) {
+        chart.handleResize();
+      }
+    });
+    resizeObserver.observe(charti.value);
+  }
+});
+
+onUnmounted(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
 });
 
 watch(useListenedTime, () => {
