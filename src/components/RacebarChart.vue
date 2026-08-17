@@ -188,18 +188,8 @@ function replayClicked() {
     replay();
   }
 }
-const ratio = 2.46;
-function resize() {
-  const width = `${
-    (window.innerWidth + 470 - window.innerHeight * ratio) / 2
-  }px`;
-  document.getElementById("leftpadding").style.width = width;
-  document.getElementById("rightpadding").style.width = width;
-}
-onMounted(() => {
-  resize();
-  window.addEventListener("resize", resize);
 
+onMounted(() => {
   chart = new Diagramm(
     props.data,
     props.filtering,
@@ -213,11 +203,8 @@ onMounted(() => {
     useListenedTime
   );
   replay();
-  //chart.resize();
 });
-onUnmounted(() => {
-  window.removeEventListener("resize", resize);
-});
+
 watch(useListenedTime, () => {
   console.log(useListenedTime.value);
   replay();
@@ -225,25 +212,20 @@ watch(useListenedTime, () => {
 </script>
 
 <template>
-  <div class="flex flex-row w-full h-full">
-    <div class="hidden lg:block" id="leftpadding"></div>
-
+  <div class="flex flex-col w-full flex-grow min-h-0">
     <div
-      class="flex w-full px-2 pb-2 mt-2 bg-gray-500 lg:px-5 lg:mt-5 backdrop-blur-xl rounded-xl bg-opacity-30"
+      class="flex w-full px-2 py-2 mt-2 bg-gray-500 lg:px-4 lg:mt-3 backdrop-blur-xl rounded-xl bg-opacity-30 shadow-2xl flex-grow min-h-0"
     >
-      <!-- <span class="text-lg"> Frame: {{ frame }} FPS: {{ fps }}</span> pb-[calc(100vh-292px)]-->
       <div
-        class="relative w-full inline-block justify-center overflow-hidden text-sm align-top rounded-md pb-[38%] lg:pb-[37%]"
+        class="relative w-full h-full flex items-center justify-center overflow-hidden text-sm rounded-md"
         ref="charti"
         id="chartiDiv"
       />
     </div>
-    <div class="hidden lg:block" id="rightpadding"></div>
-  </div>
 
-  <div
-    class="flex flex-col pt-3 pl-px lg:pl-1 lg:space-y-0 lg:pt-6 lg:flex-row"
-  >
+    <div
+      class="flex flex-col pt-2 pl-px lg:pl-1 lg:space-y-0 lg:pt-4 lg:flex-row flex-shrink-0"
+    >
     <div class="flex flex-row space-x-1 lg:space-x-0 lg:space-y-2 lg:flex-col">
       <div class="flex space-x-2">
         <button
@@ -358,6 +340,7 @@ watch(useListenedTime, () => {
       </ul>
     </div>
   </div>
+  </div>
 </template>
 
 <style>
@@ -374,9 +357,8 @@ watch(useListenedTime, () => {
   @apply px-4 py-[6px] my-2 text-xl font-semibold text-white bg-white peer-checked:border-white rounded-md cursor-pointer peer-checked:border-2 bg-opacity-30 hover:outline-2 hover:shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 hover:bg-slate-600 hover:bg-opacity-30 border-transparent border-2 select-none h-10;
 }
 .svg-content-responsive {
-  display: inline-block;
-  position: absolute;
-  top: 10px;
-  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 </style>

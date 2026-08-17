@@ -1,10 +1,10 @@
 import * as d3 from "d3";
-import { tr } from "date-fns/locale";
 
-// format the date time to a readable format in
+// Format date to a readable format
 const formatDate = d3.timeFormat("%d. %B %Y");
-const formatNumber = d3.utcFormat("%H:%M:%S");
+
 const formatDuration = (durationInMilliseconds) => {
+  if (!durationInMilliseconds || durationInMilliseconds < 0) return "0:00:00";
   const totalSeconds = Math.floor(durationInMilliseconds / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -48,40 +48,40 @@ class Diagramm {
 
     this.useListenedTime = true;
     this.useListenedTimeReactive = useListenedTime;
-    this.duration = 100;
+    this.duration = 350;
+    this.stepDelay = 180;
     this.n = 15;
     this.period = "all";
 
-    (this.margin = { top: 0, right: 6, bottom: 6, left: 0 }),
-      (this.barsize = 12),
-      (this.d3data = null),
-      (this.x = d3
-        .scaleLinear()
-        .domain([0, 1])
-        .range([this.margin.left, this.width() - this.margin.right]));
+    this.margin = { top: 15, right: 90, bottom: 20, left: 15 };
+    this.d3data = null;
+
+    this.x = d3
+      .scaleLinear()
+      .domain([0, 1])
+      .range([this.margin.left, this.width() - this.margin.right]);
+
     this.y = d3
       .scaleBand()
       .domain(d3.range(this.n + 1))
-      .rangeRound([
-        this.margin.top,
-        this.margin.top + this.barsize * (this.n + 1 + 0.1),
-      ])
-      .padding(0.1);
+      .rangeRound([this.margin.top, this.height() - this.margin.bottom])
+      .padding(0.18);
 
-    // in currentData we will put a tuple of
     this.currentData = {};
     this.visibleData = [];
+    this.lastVisibleData = [];
     this.currentMinimum = 10000000;
     this.colorMap = new Map();
     this.consideredEvents = [];
     this.initChart();
   }
-  // TODO filtering by artist and album
+
   updateVisibleData(idx, previousRank, trackNameAndArtist) {
     this.lastVisibleData = this.visibleData;
-    this.visibleData.push([
+    const initialValue = this.currentData[trackNameAndArtist];
+    const item = [
       this.data[idx].trackName,
-      this.currentData[trackNameAndArtist],
+      initialValue,
       previousRank,
       0,
       null,
@@ -89,8 +89,10 @@ class Diagramm {
       this.data[idx].spotifyUri
         ? [this.data[idx].spotifyUri]
         : [this.data[idx].trackName, this.data[idx].artistName],
-      this.filtering == "Albums" ? this.data[idx].albumName : "",
-    ]);
+      this.filtering === "Albums" ? this.data[idx].albumName : "",
+    ];
+    item.currentValue = 0;
+    this.visibleData.push(item);
     this.calculateRanks();
     this.currentMinimum = this.visibleData[this.visibleData.length - 1][1];
   }
@@ -99,16 +101,16 @@ class Diagramm {
     let trackNameAndArtist = "";
     switch (this.filtering) {
       case "Songs":
-        trackNameAndArtist = trackName + artistName;
+        trackNameAndArtist = (trackName || "") + "___" + (artistName || "");
         break;
       case "Artists":
-        trackNameAndArtist = artistName;
+        trackNameAndArtist = artistName || "";
         break;
       case "Albums":
-        trackNameAndArtist = albumName + artistName;
+        trackNameAndArtist = (albumName || "") + "___" + (artistName || "");
         break;
       default:
-        trackNameAndArtist = trackName + artistName;
+        trackNameAndArtist = (trackName || "") + "___" + (artistName || "");
         break;
     }
     return trackNameAndArtist;
@@ -127,9 +129,7 @@ class Diagramm {
     );
 
     if (this.period === "month") {
-      // check if event occured in the last 30 days
       let date = new Date(this.data[idx].endTime);
-      // while the first event is older than 30 days, remove it from the considered events
       while (
         this.consideredEvents.length > 0 &&
         this.consideredEvents[0].endTime < date.setDate(date.getDate() - 30)
@@ -153,14 +153,13 @@ class Diagramm {
     }
 
     if (this.useListenedTime) {
-      // check if track is in current data
-      if (this.currentData.hasOwnProperty(trackNameAndArtist)) {
+      if (Object.prototype.hasOwnProperty.call(this.currentData, trackNameAndArtist)) {
         this.currentData[trackNameAndArtist] += this.data[idx].msPlayed;
       } else {
         this.currentData[trackNameAndArtist] = this.data[idx].msPlayed;
       }
     } else {
-      if (this.currentData.hasOwnProperty(trackNameAndArtist)) {
+      if (Object.prototype.hasOwnProperty.call(this.currentData, trackNameAndArtist)) {
         this.currentData[trackNameAndArtist] += 1;
       } else {
         this.currentData[trackNameAndArtist] = 1;
@@ -176,7 +175,7 @@ class Diagramm {
           this.visibleData[i][7]
         ) === trackNameAndArtist
       ) {
-        // set new value
+        this.visibleData[i][3] = this.visibleData[i][1];
         this.visibleData[i][1] = this.currentData[trackNameAndArtist];
         this.calculateRanks();
         this.currentMinimum = this.visibleData[this.visibleData.length - 1][1];
@@ -189,7 +188,6 @@ class Diagramm {
       return true;
     } else if (this.currentData[trackNameAndArtist] > this.currentMinimum) {
       this.visibleData.splice(this.visibleData.length - 1, 1);
-      // add the new entry to visibleData
       this.updateVisibleData(idx, this.n, trackNameAndArtist);
       return true;
     }
@@ -197,103 +195,127 @@ class Diagramm {
   }
 
   calculateRanks() {
-    // calculate the ranks for the entries in visible data
     this.visibleData.sort(function (a, b) {
       return b[1] - a[1];
     });
     for (let i = 0; i < this.visibleData.length; ++i) {
-      // set previous rank
       this.visibleData[i][4] = this.visibleData[i][2];
-      // set new rank
       this.visibleData[i][2] = i;
     }
   }
+
   doLabels(d) {
-    let label =
-      this.filtering == "Songs"
-        ? d[0]
-        : this.filtering == "Albums"
-        ? d[7]
-        : d[5];
-    /* if (this.x(d[1]) - this.x(0) - 45 < label.length * 3) {
-      return (
-        label.substring(0, Math.floor((this.x(d[1]) - this.x(0) - 45) / 3)) +
-        "..."
-      );
-    } else { */
-      return label;
-    /* } */
+    if (this.filtering === "Songs") {
+      return d[5] ? `${d[0]}  —  ${d[5]}` : (d[0] || "");
+    } else if (this.filtering === "Albums") {
+      return d[5] ? `${d[7]}  —  ${d[5]}` : (d[7] || "");
+    } else {
+      return d[5] || "";
+    }
   }
+
+  isLabelInside(d) {
+    const barWidth = Math.max(0, this.x(d[1]) - this.x(0));
+    if (barWidth >= 220) return true;
+
+    const fullLabel = this.doLabels(d);
+    const estimatedLabelWidth = (fullLabel ? fullLabel.length : 0) * 7.5;
+    return barWidth >= estimatedLabelWidth + 100;
+  }
+
+  formatTruncatedLabel(label, availableWidth) {
+    if (!label || availableWidth <= 20) return "";
+    const maxChars = Math.floor(availableWidth / 7.5);
+    if (maxChars <= 3) return "";
+    if (label.length > maxChars) {
+      return label.slice(0, Math.max(1, maxChars - 3)) + "...";
+    }
+    return label;
+  }
+
+  getRenderedLabel(d) {
+    const fullLabel = this.doLabels(d);
+    if (!fullLabel) return "";
+
+    if (this.isLabelInside(d)) {
+      const barWidth = Math.max(0, this.x(d[1]) - this.x(0));
+      const availableWidth = barWidth - 12 - 75 - 15;
+      return this.formatTruncatedLabel(fullLabel, availableWidth);
+    } else {
+      // Outside the bar: remaining space to the right edge of chart
+      const spaceToRight = Math.max(
+        0,
+        this.width() - this.margin.right - this.x(d[1]) - 10 - 75 - 15
+      );
+      return this.formatTruncatedLabel(fullLabel, spaceToRight);
+    }
+  }
+
+  getLabelX(d) {
+    if (this.isLabelInside(d)) {
+      return this.x(0) + 12;
+    } else {
+      return this.x(d[1]) + 10;
+    }
+  }
+
+  getNumberX(d) {
+    if (this.isLabelInside(d)) {
+      return this.x(d[1]) - 10;
+    } else {
+      const renderedLabel = this.getRenderedLabel(d);
+      const labelWidth = renderedLabel ? renderedLabel.length * 7.5 : 0;
+      return this.x(d[1]) + 10 + labelWidth + 10;
+    }
+  }
+
+  getNumberAnchor(d) {
+    return this.isLabelInside(d) ? "end" : "start";
+  }
+
+  formatValue(val) {
+    if (val === null || val === undefined) return "";
+    if (this.useListenedTime) {
+      return formatDuration(val);
+    } else {
+      return Math.round(val).toLocaleString();
+    }
+  }
+
   labels(svg) {
     let label = svg
       .append("g")
-      .style("font-size", `${10 * (this.barsize * 0.04)}px`)
-      .style("font-weight", "500")
+      .style("font-size", "13px")
+      .style("font-weight", "600")
       .style(
         "font-family",
-        "Inter,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif"
+        "Inter, BlinkMacSystemFont, -apple-system, Segoe UI, Roboto, sans-serif"
       )
-      .style("font-variant-numeric", "tabular-nums")
       .style("fill", "white")
       .style("cursor", "pointer")
+      .style("filter", "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.75))")
       .attr("text-anchor", "start")
       .selectAll("text");
 
-    return (idx, transition) =>
+    return (transition) =>
       (label = label
-        .data(this.visibleData, (d) => d)
+        .data(this.visibleData, (d) => this.getTrackNameAndArtist(d[5], d[0], d[7]))
         .join(
           (enter) =>
             enter
               .append("text")
-              .attr("transform", (d) => `translate(0,${this.y(d[4])})`)
-              .attr("y", this.y.bandwidth() / 2)
-              //.attr("x", 1.2)
-              .attr("x", 1 + this.barsize / 18)
-              .attr("dy", "0.4em")
-              .text((d) => this.doLabels(d))
-              // send the spotify uri or the track name and artist to the singleSongFunction
+              .attr("dominant-baseline", "central")
+              .attr("text-anchor", "start")
+              .attr(
+                "transform",
+                (d) =>
+                  `translate(${this.getLabelX(d)}, ${
+                    this.y(d[4] !== null && d[4] !== undefined ? d[4] : this.n) +
+                    this.y.bandwidth() / 2
+                  })`
+              )
+              .text((d) => this.getRenderedLabel(d))
               .on("click", (_, d) => this.singleSongFunction(d[6])),
-          //.attr("dy", "-1.15em")),
-          (update) => update,
-          (exit) =>
-            exit
-              .transition(transition)
-              .remove()
-              .attr("transform", (d) => `translate(0,${this.y(this.n)})`)
-        )
-        .call((bar) =>
-          bar
-            .transition(transition)
-            .attr("transform", (d) => `translate(0,${this.y(d[2])})`)
-            .text((d) => this.doLabels(d))
-        ));
-  }
-  images(svg) {
-    let image = svg
-      .append("g")
-      .attr("width", 10)
-      .attr("height", 10)
-      .attr("x", -6)
-      .attr("y", this.y.bandwidth() / 2);
-
-    return ([date, data], transition) =>
-      (image = image
-        .data(this.visibleData, (d) => d)
-        .join(
-          (enter) =>
-            enter
-              .append("image")
-              .attr(
-                "transform",
-                (d) => `translate(0,${this.y((this.prev.get(d) || d).rank)})`
-              )
-              .attr("y", this.y.bandwidth() / 2)
-              .attr("x", 1)
-              .attr(
-                "href",
-                "https://www.redditstatic.com/awards2/8_year_club-40.png"
-              ),
           (update) => update,
           (exit) =>
             exit
@@ -301,58 +323,10 @@ class Diagramm {
               .remove()
               .attr(
                 "transform",
-                (d) => `translate(0,${this.y((this.next.get(d) || d).rank)})`
-              )
-        )
-        .call((bar) =>
-          bar
-            .transition(transition)
-            .attr("transform", (d) => `translate(0,${this.y(d.rank)})`)
-        ));
-  }
-  numbers(svg) {
-    let label = svg
-      .append("g")
-      .style("font-size", `${(7) + (this.barsize / 5.7) }px`)
-      .style(
-        "font-family",
-        "Inter,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif"
-      )
-      .style("font-variant-numeric", "tabular-nums")
-      .style("fill", "white")
-      .attr("text-anchor", "end")
-      .selectAll("text");
-
-    return ([date, data], transition) =>
-      (label = label
-        .data(this.visibleData, (d) => d)
-        .join(
-          (enter) =>
-            enter
-              .append("text")
-              .attr(
-                "transform",
-                (d) => `translate(${this.x(d[3])},${this.y(d[4])})`
-              )
-              .attr("fill-opacity", 0.9)
-              .attr("font-weight", "normal")
-              .attr("dy", "1.05em")
-              //.attr("dy", "0.4em")
-              .attr("dx", "-0.2em"),
-          //.attr("dx", "-0.2em"),
-          (update) => update,
-          (exit) =>
-            exit
-              .transition(transition)
-              .remove()
-              .attr(
-                "transform",
-                (d) => `translate(${this.x(d[1])},${this.y(this.n)})`
-              )
-              .call((g) =>
-                g
-                  .select("text")
-                  .tween("text", (d) => this.textTween(d[3], d[1]))
+                (d) =>
+                  `translate(${this.getLabelX(d)}, ${
+                    this.y(this.n) + this.y.bandwidth() / 2
+                  })`
               )
         )
         .call((bar) =>
@@ -360,25 +334,86 @@ class Diagramm {
             .transition(transition)
             .attr(
               "transform",
-              (d) => `translate(${this.x(d[1])},${this.y(d[2])})`
+              (d) =>
+                `translate(${this.getLabelX(d)}, ${
+                  this.y(d[2]) + this.y.bandwidth() / 2
+                })`
             )
-            .tween("text", (d) => {
-              if (this.useListenedTime) {
-                return this.textTween(d[3], d[1]);
-              } else {
-                return function () {
-                  return (this.textContent = d[1]);
-                };
+            .text((d) => this.getRenderedLabel(d))
+        ));
+  }
+
+  numbers(svg) {
+    const self = this;
+    let label = svg
+      .append("g")
+      .style("font-size", "12px")
+      .style("font-weight", "600")
+      .style(
+        "font-family",
+        "Inter, BlinkMacSystemFont, -apple-system, Segoe UI, Roboto, sans-serif"
+      )
+      .style("font-variant-numeric", "tabular-nums")
+      .style("fill", "white")
+      .style("filter", "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.75))")
+      .selectAll("text");
+
+    return (transition) =>
+      (label = label
+        .data(this.visibleData, (d) => this.getTrackNameAndArtist(d[5], d[0], d[7]))
+        .join(
+          (enter) =>
+            enter
+              .append("text")
+              .attr("dominant-baseline", "central")
+              .attr("transform", (d) => {
+                const xPos = this.getNumberX(d);
+                const yPos =
+                  this.y(d[4] !== null && d[4] !== undefined ? d[4] : this.n) +
+                  this.y.bandwidth() / 2;
+                return `translate(${xPos}, ${yPos})`;
+              })
+              .attr("text-anchor", (d) => this.getNumberAnchor(d))
+              .attr("fill-opacity", 0.95)
+              .text((d) => self.formatValue(d.currentValue !== undefined ? d.currentValue : (d[3] || 0))),
+          (update) => update,
+          (exit) =>
+            exit
+              .transition(transition)
+              .remove()
+              .attr("transform", (d) => {
+                const xPos = this.getNumberX(d);
+                const yPos = this.y(this.n) + this.y.bandwidth() / 2;
+                return `translate(${xPos}, ${yPos})`;
+              })
+              .attr("text-anchor", (d) => this.getNumberAnchor(d))
+        )
+        .call((bar) =>
+          bar
+            .transition(transition)
+            .attr("transform", (d) => {
+              const xPos = this.getNumberX(d);
+              const yPos = this.y(d[2]) + this.y.bandwidth() / 2;
+              return `translate(${xPos}, ${yPos})`;
+            })
+            .attr("text-anchor", (d) => this.getNumberAnchor(d))
+            .tween("text", function (d) {
+              const fromVal = d.currentValue !== undefined ? d.currentValue : (d[3] || 0);
+              const toVal = d[1];
+              if (fromVal === toVal) {
+                this.textContent = self.formatValue(toVal);
+                return;
               }
+              const i = d3.interpolateNumber(fromVal, toVal);
+              return function (t) {
+                const val = i(t);
+                d.currentValue = val;
+                this.textContent = self.formatValue(val);
+              };
             })
         ));
   }
-  textTween(a, b) {
-    const i = d3.interpolateNumber(a, b);
-    return function (t) {
-      this.textContent = formatDuration(i(t));
-    };
-  }
+
   axis(svg) {
     const g = svg
       .append("g")
@@ -386,188 +421,176 @@ class Diagramm {
 
     const axis = d3
       .axisTop(this.x)
-      .ticks(this.width / 160)
+      .ticks(this.width() / 150)
       .tickSizeOuter(0)
-      .tickSizeInner(-this.barsize * (this.n + this.y.padding()));
+      .tickSizeInner(-(this.height() - this.margin.top - this.margin.bottom))
+      .tickFormat(() => ""); // No x-axis labels
 
-    return (_, transition) => {
+    return (transition) => {
       g.transition(transition).call(axis);
-      g.select(".tick:first-of-type text").remove();
-      g.selectAll(".tick:not(:first-of-type) line").attr("stroke", "white");
+      g.selectAll(".tick text").remove();
+      g.selectAll(".tick line")
+        .attr("stroke", "rgba(255, 255, 255, 0.08)")
+        .attr("stroke-dasharray", "2,2");
       g.select(".domain").remove();
     };
   }
+
   ticker(svg) {
     const now = svg
       .append("text")
-
-      .style("font", `bold ${this.barsize}px var(--sans-serif)`)
+      .style("font-family", "Inter, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif")
+      .style("font-size", "28px")
+      .style("font-weight", "700")
       .style("font-variant-numeric", "tabular-nums")
-      .style("fill", "white")
+      .style("fill", "rgba(255, 255, 255, 0.45)")
       .attr("text-anchor", "end")
-      .attr("x", this.width() - 3)
-      .attr("y", this.margin.top - 3 + this.barsize * (this.n + 1))
-      //.attr("dy", "0.32em")
-      .text(formatDate(this.data[0].endTime));
-
-    return (idx, transition) => {
-      now.style("font-size", `${12 + this.barsize * 0.2}px`);
-      now.text(
-        /* formatDate(
-            d3.timeParse("%Y-%m-%d")(this.data[0].endTime.split(" ")[0])
-          ) +
-            " - \n" + */
-        formatDate(
-          d3.timeParse("%Y-%m-%d")(this.data[idx].endTime.split(" ")[0])
-        )
+      .attr("x", this.width() - this.margin.right)
+      .attr("y", this.height() - this.margin.bottom - 4)
+      .text(
+        this.data && this.data[0]
+          ? formatDate(new Date(this.data[0].endTime))
+          : ""
       );
+
+    return (idx) => {
+      if (!this.data[idx]) return;
+      const parsed =
+        d3.timeParse("%Y-%m-%d")(this.data[idx].endTime.split(" ")[0]) ||
+        new Date(this.data[idx].endTime);
+      now.text(formatDate(parsed));
     };
   }
+
   color(artist) {
-    // lookup color by name or create a new color if name is not in the map
-    // get all unique names from data
-    // const names = Array.from(new Set(this.data.flatMap(d => d.map(d => d[5]))));
     if (this.colorMap.has(artist)) {
-      // If the category exists, return the corresponding color
       return this.colorMap.get(artist);
     } else {
-      // If the category does not exist, generate a new random color
-      //const color = d3.color(d3.interpolateInferno(Math.random()));
       const color = d3.color(d3.interpolateWarm(Math.random()));
-      //const color = d3.color(d3.interpolateTurbo(Math.random()));
-      //const color = d3.color(d3.interpolateRainbow(Math.random()));
-      //const color = d3.color(d3.interpolateBlues(Math.random()));
-
-      // Add the new category and color to the map
-      this.colorMap.set(artist, color); //.darker());
-      // Return the newly generated color
+      this.colorMap.set(artist, color);
       return color;
     }
   }
+
   bars(svg) {
     let bar = svg
       .append("g")
-      //.attr("fill-opacity", 1)
       .selectAll("rect");
 
-    return ([date, data], transition) =>
+    return (transition) =>
       (bar = bar
-        .data(this.visibleData, (d) => d)
+        .data(this.visibleData, (d) => this.getTrackNameAndArtist(d[5], d[0], d[7]))
         .join(
           (enter) =>
             enter
               .append("rect")
-              .attr("rx", 1 + this.barsize / 12)
+              .attr("rx", 5)
+              .attr("ry", 5)
               .attr("fill", (d) => this.color(d[5]))
-              //.attr("height", this.y.bandwidth())
-              .attr("height", this.barsize)
-              .attr("x", this.x(0) + 0.1)
-              .attr("y", (d) => this.y(d[4]))
-              .attr("width", (d) => this.x(d[3]) - this.x(0)),
+              .attr("height", this.y.bandwidth())
+              .attr("x", this.x(0))
+              .attr(
+                "y",
+                (d) =>
+                  this.y(d[4] !== null && d[4] !== undefined ? d[4] : this.n)
+              )
+              .attr("width", (d) => Math.max(0, this.x(d[3] || 0) - this.x(0))),
           (update) => update,
           (exit) =>
             exit
               .transition(transition)
               .remove()
-              .attr("y", (d) => this.y(this.n))
-              .attr("width", (d) => this.x(d[1]) - this.x(0))
+              .attr("y", this.y(this.n))
+              .attr("width", (d) => Math.max(0, this.x(d[1]) - this.x(0)))
         )
         .call((bar) =>
           bar
             .transition(transition)
             .attr("y", (d) => this.y(d[2]))
-            .attr("width", (d) => this.x(d[1]) - this.x(0))
+            .attr("width", (d) => Math.max(0, this.x(d[1]) - this.x(0)))
+            .attr("height", this.y.bandwidth())
         ));
   }
+
   height() {
-    return this.margin.top + this.barsize * (this.n + 1.1) + this.margin.bottom;
-  }
-  width() {
     return 500;
   }
+
+  width() {
+    return 1200;
+  }
+
   initChart() {
     this.svg = d3
       .select(this.charti)
       .append("svg")
       .attr("viewBox", [0, 0, this.width(), this.height()])
-      .attr("preserveAspectRatio", "xMinYMin meet")
+      .attr("preserveAspectRatio", "xMidYMid meet")
       .classed("svg-content-responsive", true);
-
-    /* const sizes = document.getElementById("chartiDiv").getBoundingClientRect();
-    const ratio = sizes.height / sizes.width;
-
-    // Adjust scaling factor depending on typical ratio range
-    const scaleFactor = Math.min(sizes.width, sizes.height) / 790; // Base reference width
-
-    this.barsize = ratio * 25 * scaleFactor; */
-
-    // set barsize according to the ratio of div width and height
-    const sizes = document.getElementById("chartiDiv").getBoundingClientRect();
-    this.barsize = (sizes.height / sizes.width) * 30.8; //31.3;
-    console.log(this.barsize);
 
     this.y = d3
       .scaleBand()
       .domain(d3.range(this.n + 1))
-      .rangeRound([
-        this.margin.top,
-        this.margin.top + this.barsize * (this.n + 1 + 0.1 + 1.2),
-      ])
-      .padding(0.1);
-    //this.svg.attr("height", this.height());
-    this.svg.attr("viewBox", [0, 0, this.width(), this.height()]);
+      .rangeRound([this.margin.top, this.height() - this.margin.bottom])
+      .padding(0.18);
+
+    this.x = d3
+      .scaleLinear()
+      .domain([0, 1])
+      .range([this.margin.left, this.width() - this.margin.right]);
 
     this.updateBars = this.bars(this.svg);
     this.updateAxis = this.axis(this.svg);
-    //this.updateImages = this.images(this.svg);
     this.updateLabels = this.labels(this.svg);
     this.updateNumbers = this.numbers(this.svg);
     this.updateTicker = this.ticker(this.svg);
   }
+
   initData(data) {
-    this.svg.remove();
+    if (this.svg) {
+      this.svg.remove();
+    }
     this.initChart();
     this.data = data;
     this.visibleData = [];
     this.lastVisibleData = [];
-    this.currentData = [];
+    this.currentData = {};
     this.consideredEvents = [];
     this.currentMinimum = 0;
     this.useListenedTime = this.useListenedTimeReactive.value;
   }
+
   replay(i) {
     return new Promise(async (resolve) => {
       if (!i) i = 0;
       while (i < this.data.length) {
         if (!this.running.value) {
-          this.svg.transition();
+          if (this.svg) this.svg.transition();
           this.stoppedFrameIndex.value = i;
           resolve();
           return;
         }
         this.frame.value = i;
 
-        //this.data.length
-
         if (this.calcNewPositions(i)) {
-          if (!this.onlyLastFrame.value) await this.render(i);
-          // set previous value
-          for (let i = 0; i < this.visibleData.length; ++i) {
-            this.visibleData[i][3] = this.lastVisibleData[i][1];
+          if (!this.onlyLastFrame.value) {
+            this.render(i);
+            await new Promise((r) => setTimeout(r, this.stepDelay));
           }
         }
         i++;
       }
       if (this.onlyLastFrame.value) {
-        await this.render(this.data.length - 1);
-        console.log(this.visibleData);
+        this.render(this.data.length - 1);
         resolve();
       } else {
         resolve();
       }
     });
   }
+
   updateExternalDate(idx) {
+    if (!this.data || !this.data[idx]) return;
     this.externalDate.value =
       formatDate(d3.timeParse("%Y-%m-%d")(this.data[0].endTime.split(" ")[0])) +
       " - " +
@@ -575,24 +598,26 @@ class Diagramm {
         d3.timeParse("%Y-%m-%d")(this.data[idx].endTime.split(" ")[0])
       );
   }
-  async render(i) {
+
+  render(i) {
     const transition = this.svg
       .transition()
       .duration(this.duration)
       .ease(d3.easeLinear);
 
-    // scale the graph
-    this.x.domain([0, this.visibleData[0][1]]);
+    const maxVal =
+      this.visibleData && this.visibleData.length > 0
+        ? this.visibleData[0][1]
+        : 1;
+    this.x.domain([0, Math.max(1, maxVal)]);
 
     this.updateAxis(transition);
     this.updateBars(transition);
-    this.updateLabels(i, i, transition);
+    this.updateLabels(transition);
     this.updateNumbers(transition);
-    this.updateTicker(i, transition);
-    //this.updateImages(transition);
-    //this.updateExternalDate(i);
-    await transition.end();
+    this.updateTicker(i);
   }
 }
 
 export { Diagramm };
+
