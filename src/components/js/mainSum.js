@@ -48,9 +48,9 @@ class Diagramm {
 
     this.useListenedTime = true;
     this.useListenedTimeReactive = useListenedTime;
-    this.duration = 350;
+    this.duration = 250;
     this.resultDuration = 0; // Snappy animation duration for "Result" mode
-    this.stepDelay = 180;
+    this.stepDelay = 130;
     this.n = 15;
     this.period = "all";
 
